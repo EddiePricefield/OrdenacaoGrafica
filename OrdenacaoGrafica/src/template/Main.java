@@ -160,8 +160,8 @@ public class Main extends EngineFrame {
                    }
                    
                    
-                   if( valores[i] > 10){
-                       System.err.println( "Valor acima de 10 inserido entre os valores do array!" );
+                   if( valores[i] > 99){
+                       System.err.println( "Valor acima de 99 inserido entre os valores do array!" );
                        msg = 2;
                        return;
                    }
@@ -224,7 +224,7 @@ public class Main extends EngineFrame {
         
         //Texto com a aba de alteração do array
         drawText( "Insira um novo valor para o array", 155, 280, 25, BLACK );
-        drawText( "(Até 10 valores, no intervalo de 0 a 10, separados por vírgula ou espaço)", 110, 315, 13, BLACK );
+        drawText( "(Até 10 valores, no intervalo de 0 a 99, separados por vírgula ou espaço)", 110, 315, 13, BLACK );
         
         //Textos com o nome dos Algoritmos
         drawText( "Selection Sort", 35, 85, 15, BLUE );
@@ -235,7 +235,7 @@ public class Main extends EngineFrame {
         //Texto com as mensagens de erro
         switch (msg) { //O próprio NetBeans sugeriu para mim usar um "rule switch" e fez as alterações
             case 1 -> drawText( "Erro: Insira no máximo 10 valores para o novo array!", 165, 415, 15, RED );
-            case 2 -> drawText( "Erro: Insira apenas valores entre 0 a 10!", 210, 415, 15, RED );
+            case 2 -> drawText( "Erro: Insira apenas valores entre 0 a 99!", 210, 415, 15, RED );
             case 3 -> drawText( "Erro: Insira ao menos um valor no primeiro indice para criar um novo array!", 65, 415, 15, RED );
             case 4 -> drawText( "Erro: Insira apenas números!", 270, 415, 15, RED );
             case 5 -> drawText( "Simulação realizada com sucesso!", 250, 415, 15, GREEN );
@@ -438,13 +438,23 @@ public class Main extends EngineFrame {
         
     }
     
+    /*
+    private void verificarTamanho( int[] array ){
+        
+        tamanho = 11 - array.length / 10;
+        distancia = ( 11 - array.length / 10 ) / 2;
+        
+    }
+    */
+    
     //Desenhando o gráfico
     
     private void desenharArray( int[] a, int xIni, int yIni, int tamanho, int espaco, Color cor ) {
         
         for ( int i = 0; i < a.length; i++ ) {
             
-            int altura = tamanho * a[i];
+            int max = Arrays.stream(a).max().getAsInt(); //Confeso que não fazia ideia da existencia disso daqui, mas fez o que eu queria
+            double altura = (a[i] * (120.0 / max)); //usando o valor maximo do meu retângulo e do array pra criar uma escala pra altura
             
             fillRectangle(
                     xIni + ( tamanho + espaco ) * i,
