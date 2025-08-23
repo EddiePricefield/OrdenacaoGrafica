@@ -211,7 +211,7 @@ public class Main extends EngineFrame {
         desenharArray( selectionArrays.get( copiaSelectionAtual ), 25, ( getScreenHeight() / 2 ), 10, 5, BLUE );
         desenharArray( insertionArrays.get( copiaInsertionAtual ), 225, ( getScreenHeight() / 2 ), 10, 5, RED );
         desenharArray( shellArrays.get( copiaShellAtual ), 425, ( getScreenHeight() / 2 ), 10, 5, GREEN );
-        desenharArray( mergeArrays.get( copiaMergeAtual ), 625, ( getScreenHeight() / 2 ), 10, 5, ORANGE );
+        desenharArray( mergeArrays.get( copiaMergeAtual ), 625, ( getScreenHeight() / 2 ), 10, Arrays.stream( mergeArrays.get(0) ).max().getAsInt() , 5, ORANGE );
         
         //Retângulos ao redor dos gráficos
         drawRectangle( 20, 100, 155, 130, BLACK );
@@ -437,24 +437,15 @@ public class Main extends EngineFrame {
         tempoMerge = ( System.nanoTime() - tempoInicial );
         
     }
-    
-    /*
-    private void verificarTamanho( int[] array ){
-        
-        tamanho = 11 - array.length / 10;
-        distancia = ( 11 - array.length / 10 ) / 2;
-        
-    }
-    */
-    
+       
     //Desenhando o gráfico
     
     private void desenharArray( int[] a, int xIni, int yIni, int tamanho, int espaco, Color cor ) {
         
         for ( int i = 0; i < a.length; i++ ) {
             
-            int max = Arrays.stream(a).max().getAsInt(); //Confeso que não fazia ideia da existencia disso daqui, mas fez o que eu queria
-            double altura = (a[i] * (120.0 / max)); //usando o valor maximo do meu retângulo e do array pra criar uma escala pra altura
+            int max = Arrays.stream( a ).max().getAsInt(); //Confeso que não fazia ideia da existencia disso daqui, mas fez o que eu queria
+            double altura = ( a[i] * ( 120.0 / max ) ); //usando o valor maximo do meu retângulo e do array pra criar uma escala pra altura
             
             fillRectangle(
                     xIni + ( tamanho + espaco ) * i,
@@ -465,6 +456,25 @@ public class Main extends EngineFrame {
             
         }
         
+    }
+    
+    //Preciso criar um outro método exclusivo pro MergeSort, senão a parte visual dele vai ficar toda feia comparada com as outras. 
+    
+    private void desenharArray(int[] a, int xIni, int yIni, int tamanho, int max, int espaco, Color cor) { //Mas ai é só eu passar o valor maximo do array primário e usar ele como base pra todo o resto
+
+        for (int i = 0; i < a.length; i++) {
+
+            double altura = ( a[i] * ( 120.0 / max ) ); //usando o valor maximo do meu retângulo e do array pra criar uma escala pra altura
+
+            fillRectangle(
+                    xIni + (tamanho + espaco) * i,
+                    yIni - altura,
+                    tamanho,
+                    altura, cor
+            );
+
+        }
+
     }
     
     /**
