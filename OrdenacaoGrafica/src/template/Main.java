@@ -153,7 +153,11 @@ public class Main extends EngineFrame {
                    
                    if( Character.isDigit( valoresBrutos[i].charAt( 0 ) ) ){
                        valores[i] = Integer.parseInt( valoresBrutos[i] ); //Usar isso daqui pra transformar de String para Int
-                   }else{
+                   } else if( valoresBrutos[i].charAt( 0 ) == '-' && valoresBrutos[i].length() > 1 && Character.isDigit( valoresBrutos[i].charAt( 1 ) ) ){
+                       System.err.println( "Nao ha suporte para numeros negativos" );
+                       msg = 5;
+                       return;
+                   } else{
                        System.err.println( "Foi encontrado uma letra/caractere especial entre os valores do array!" );
                        msg = 4;
                        return;
@@ -168,7 +172,7 @@ public class Main extends EngineFrame {
                    
                 }
                
-               msg = 5;
+               msg = 6;
                
                //Limpar as listas de array para redesenhar do jeito certo
                 insertionArrays.clear();
@@ -238,7 +242,8 @@ public class Main extends EngineFrame {
             case 2 -> drawText( "Erro: Insira apenas valores entre 0 a 99!", 210, 415, 15, RED );
             case 3 -> drawText( "Erro: Insira ao menos um valor no primeiro indice para criar um novo array!", 65, 415, 15, RED );
             case 4 -> drawText( "Erro: Insira apenas números!", 270, 415, 15, RED );
-            case 5 -> drawText( "Simulação realizada com sucesso!", 250, 415, 15, GREEN );
+            case 5 -> drawText( "Erro: Não há suporte para números negativos!", 195, 415, 15, RED );
+            case 6 -> drawText( "Simulação realizada com sucesso!", 250, 415, 15, GREEN );
             default -> {
             }
         }
