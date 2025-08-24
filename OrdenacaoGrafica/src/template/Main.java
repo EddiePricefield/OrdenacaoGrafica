@@ -12,6 +12,8 @@ import br.com.davidbuzatto.jsge.imgui.GuiTextField;
 import br.com.davidbuzatto.jsge.imgui.GuiWindow;
 import br.com.davidbuzatto.jsge.math.Vector2;
 import java.awt.Color;
+import java.awt.Desktop;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -56,7 +58,8 @@ public class Main extends EngineFrame {
     //Caixa de texto para inserir valores de array para realizar a simulação
     private GuiTextField txtCaixa;
     
-    //Botão para reiniciar a simulação inteira e para abrir as configurações
+    //Botões do programa
+    private GuiLabelButton btnLink;
     private GuiButton btnResetAll;
     private GuiButton btnConfig;
     
@@ -67,8 +70,8 @@ public class Main extends EngineFrame {
     private GuiWindow janelaConfig;
     private GuiCheckBox checkOrdenado;
     private GuiSlider velSimulacao;
-    private GuiLabel labelVelSimulacao;
-    private GuiLabelButton btnLink;
+    private GuiLabel labelVelSimulacao; 
+    private double valorSlider;
     
     private boolean marcado;
     
@@ -103,6 +106,7 @@ public class Main extends EngineFrame {
         
         marcado = false;
         tempoParaMudar = 0.55;
+        valorSlider = 5.5;
         
         array = new int[]{ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
         
@@ -236,23 +240,29 @@ public class Main extends EngineFrame {
         //Janela de Configurações do programa
         arrastarJanela();
         marcado = checkOrdenado.isSelected();
-        tempoParaMudar = velSimulacao.getValue() / 10;
+        tempoParaMudar = valorSlider / 10;
+        valorSlider = velSimulacao.getValue();
         
-        if( btnConfig.isMousePressed() ){
-            
+        if( btnConfig.isMousePressed() ){ 
             desenharJanela();
-            glue.setVisible( true );
-            
+            glue.setVisible( true );   
         }
         
-        if( janelaConfig.isCloseButtonPressed() ) {
-            
+        if( janelaConfig.isCloseButtonPressed() ) {   
             glue.setVisible( false );
-
         }
         
         if( janelaConfig.isTitleBarPressed() ) {
             draggedComponent = glue;
+        }
+        
+        //Creditos
+        if( btnLink.isMousePressed() ){
+            try{ URI link = new URI( "https://github.com/EddiePricefield" );
+            Desktop.getDesktop().browse( link );
+            } catch ( Exception e ){
+                e.printStackTrace();
+            }
         }
                 
     }
@@ -533,7 +543,7 @@ public class Main extends EngineFrame {
         
         janelaConfig = new GuiWindow( 295, 120, 200, 150, "Configurações" );
         labelVelSimulacao = new GuiLabel( 20, 40, 40, 20, "Velocidade da Simulação" );
-        velSimulacao = new GuiSlider( 20, 40, 130, 60, ( tempoParaMudar * 10 ), 1, 10, GuiSlider.HORIZONTAL );
+        velSimulacao = new GuiSlider( 20, 40, 130, 60, valorSlider, 1, 10, GuiSlider.HORIZONTAL );
         checkOrdenado = new GuiCheckBox( 20, 40, 20, 20, " Exibir Array Ordenado" );       
         
         checkOrdenado.setSelected( marcado );
