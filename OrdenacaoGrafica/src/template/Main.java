@@ -2,9 +2,12 @@ package template;
 
 import br.com.davidbuzatto.jsge.core.engine.EngineFrame;
 import br.com.davidbuzatto.jsge.imgui.GuiButton;
+import br.com.davidbuzatto.jsge.imgui.GuiCheckBox;
 import br.com.davidbuzatto.jsge.imgui.GuiComponent;
 import br.com.davidbuzatto.jsge.imgui.GuiGlue;
+import br.com.davidbuzatto.jsge.imgui.GuiLabel;
 import br.com.davidbuzatto.jsge.imgui.GuiLabelButton;
+import br.com.davidbuzatto.jsge.imgui.GuiSlider;
 import br.com.davidbuzatto.jsge.imgui.GuiTextField;
 import br.com.davidbuzatto.jsge.imgui.GuiWindow;
 import br.com.davidbuzatto.jsge.math.Vector2;
@@ -62,6 +65,12 @@ public class Main extends EngineFrame {
     private Vector2 previousMousePos;
     private GuiComponent draggedComponent;
     private GuiWindow janelaConfig;
+    private GuiCheckBox checkOrdenado;
+    private GuiSlider velSimulacao;
+    private GuiLabel labelVelSimulacao;
+    private GuiLabelButton btnLink;
+    
+    private boolean marcado;
     
     public Main() {
         
@@ -92,6 +101,9 @@ public class Main extends EngineFrame {
         
         useAsDependencyForIMGUI(); //Precisa disso aqui pra fazer os botões funcionarem
         
+        marcado = false;
+        tempoParaMudar = 0.55;
+        
         array = new int[]{ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
         
         selectionArrays = new ArrayList<>();
@@ -104,12 +116,12 @@ public class Main extends EngineFrame {
         txtCaixa = new GuiTextField( 200, 360, 215, 30, "1, 2, 3, 4, 5, 6, 7, 8, 9, 10" );
         btnResetAll = new GuiButton( 425, 360, 160, 30, "Reiniciar a Simulação" );
         
+        btnLink = new GuiLabelButton( 10, 425, 110, 20, "@EddiePricefield" );
+        
         btnConfig = new GuiButton( 760, 410, 30, 30, "🔧" );
         desenharJanela();
         
         glue.setVisible( false );
-        
-        tempoParaMudar = 0.50;
 
     }
 
@@ -148,6 +160,10 @@ public class Main extends EngineFrame {
         txtCaixa.update( delta );
         btnConfig.update( delta );
         janelaConfig.update( delta );
+        checkOrdenado.update( delta );
+        velSimulacao.update( delta );
+        labelVelSimulacao.update( delta );
+        btnLink.update( delta );
         
         //Resetar a Simulação
         if ( btnResetAll.isMousePressed() ) {
@@ -207,14 +223,20 @@ public class Main extends EngineFrame {
                 copiaInsertionAtual = 0;
                 copiaShellAtual = 0;
                 copiaMergeAtual = 0;
+                
+                //Exibir ou não o Array Ordenado após a realização da simulação
+                if( marcado ){
+                    txtCaixa.setValue( Arrays.toString( insertionArrays.getLast() ).replace( "[", "" ).replace( "]", "" ).replace(",", "") );
+                }
                
             }
 
         }
         
         //Janela de Configurações do programa
-        
         arrastarJanela();
+        marcado = checkOrdenado.isSelected();
+        tempoParaMudar = velSimulacao.getValue() / 10;
         
         if( btnConfig.isMousePressed() ){
             
@@ -298,6 +320,10 @@ public class Main extends EngineFrame {
         
         //Desenhando a janela de configurações
         janelaConfig.draw();
+        checkOrdenado.draw();
+        velSimulacao.draw();
+        labelVelSimulacao.draw();
+        btnLink.draw();
         
     }
     
@@ -505,9 +531,18 @@ public class Main extends EngineFrame {
     
     private void desenharJanela(){
         
-        janelaConfig = new GuiWindow( 100, 50, 600, 300, "Configurações" );
-        glue = new GuiGlue( janelaConfig );
+        janelaConfig = new GuiWindow( 295, 120, 200, 150, "Configurações" );
+        labelVelSimulacao = new GuiLabel( 20, 40, 40, 20, "Velocidade da Simulação" );
+        velSimulacao = new GuiSlider( 20, 40, 130, 60, ( tempoParaMudar * 10 ), 1, 10, GuiSlider.HORIZONTAL );
+        checkOrdenado = new GuiCheckBox( 20, 40, 20, 20, " Exibir Array Ordenado" );       
         
+        checkOrdenado.setSelected( marcado );
+        
+        glue = new GuiGlue( janelaConfig );
+        glue.addChild( labelVelSimulacao, 20, 40);
+        glue.addChild( velSimulacao, 35, 45 );
+        glue.addChild( checkOrdenado, 10, 110 );        
+            
     }
        
     //Desenhando o gráfico
