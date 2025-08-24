@@ -2,7 +2,12 @@ package template;
 
 import br.com.davidbuzatto.jsge.core.engine.EngineFrame;
 import br.com.davidbuzatto.jsge.imgui.GuiButton;
+import br.com.davidbuzatto.jsge.imgui.GuiComponent;
+import br.com.davidbuzatto.jsge.imgui.GuiGlue;
+import br.com.davidbuzatto.jsge.imgui.GuiLabelButton;
 import br.com.davidbuzatto.jsge.imgui.GuiTextField;
+import br.com.davidbuzatto.jsge.imgui.GuiWindow;
+import br.com.davidbuzatto.jsge.math.Vector2;
 import java.awt.Color;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -48,8 +53,15 @@ public class Main extends EngineFrame {
     //Caixa de texto para inserir valores de array para realizar a simulação
     private GuiTextField txtCaixa;
     
-    //Botão para reiniciar a simulação inteira
+    //Botão para reiniciar a simulação inteira e para abrir as configurações
     private GuiButton btnResetAll;
+    private GuiButton btnConfig;
+    
+    //Variáveis para a janela de configurações
+    private GuiGlue glue;
+    private Vector2 previousMousePos;
+    private GuiComponent draggedComponent;
+    private GuiWindow janelaConfig;
     
     public Main() {
         
@@ -90,8 +102,12 @@ public class Main extends EngineFrame {
         aplicarAlgoritmos( array );
         
         txtCaixa = new GuiTextField( 200, 360, 215, 30, "1, 2, 3, 4, 5, 6, 7, 8, 9, 10" );
-        
         btnResetAll = new GuiButton( 425, 360, 160, 30, "Reiniciar a Simulação" );
+        
+        btnConfig = new GuiButton( 760, 410, 30, 30, "🔧" );
+        desenharJanela();
+        
+        glue.setVisible( false );
         
         tempoParaMudar = 0.50;
 
@@ -127,11 +143,13 @@ public class Main extends EngineFrame {
                 
         }
 
-        //Conferir o estado do botão de reiniciar simulação e da caixa de texto
+        //Conferir o estado de todos os itens do GUI
         btnResetAll.update( delta );
-        txtCaixa.update ( delta );
+        txtCaixa.update( delta );
+        btnConfig.update( delta );
+        janelaConfig.update( delta );
         
-        //Resetar as posições dos arraysCopia para 0
+        //Resetar a Simulação
         if ( btnResetAll.isMousePressed() ) {
             
             //Pegando os valores do TextField e transformando para uma tabela do tipo int
@@ -149,32 +167,32 @@ public class Main extends EngineFrame {
                     return;
                 }
                 
-               for( int i = 0; i < valores.length; i++ ){
+                for( int i = 0; i < valores.length; i++ ){
                    
-                   if( Character.isDigit( valoresBrutos[i].charAt( 0 ) ) ){
+                    if( Character.isDigit( valoresBrutos[i].charAt( 0 ) ) ){
                        valores[i] = Integer.parseInt( valoresBrutos[i] ); //Usar isso daqui pra transformar de String para Int
-                   } else if( valoresBrutos[i].charAt( 0 ) == '-' && valoresBrutos[i].length() > 1 && Character.isDigit( valoresBrutos[i].charAt( 1 ) ) ){
+                    } else if( valoresBrutos[i].charAt( 0 ) == '-' && valoresBrutos[i].length() > 1 && Character.isDigit( valoresBrutos[i].charAt( 1 ) ) ){
                        System.err.println( "Nao ha suporte para numeros negativos" );
                        msg = 5;
                        return;
-                   } else{
+                    } else{
                        System.err.println( "Foi encontrado uma letra/caractere especial entre os valores do array!" );
                        msg = 4;
                        return;
-                   }
+                    }
                    
                    
-                   if( valores[i] > 99){
+                    if( valores[i] > 99){
                        System.err.println( "Valor acima de 99 inserido entre os valores do array!" );
                        msg = 2;
                        return;
-                   }
+                    }
                    
                 }
                
-               msg = 6;
+                msg = 6; //Mensagem de sucesso após realização da simulação
                
-               //Limpar as listas de array para redesenhar do jeito certo
+                //Limpar as listas de array para redesenhar do jeito certo
                 insertionArrays.clear();
                 selectionArrays.clear();
                 shellArrays.clear();
@@ -183,7 +201,8 @@ public class Main extends EngineFrame {
                 //Aplicar os algoritmos usando a medição do tempo e desenhando o tempo
                 aplicarAlgoritmos( valores );
                 desenharTempo();
-            
+                
+                //Reiniciar os valores dos gráficos
                 copiaSelectionAtual = 0;
                 copiaInsertionAtual = 0;
                 copiaShellAtual = 0;
@@ -191,6 +210,27 @@ public class Main extends EngineFrame {
                
             }
 
+        }
+        
+        //Janela de Configurações do programa
+        
+        arrastarJanela();
+        
+        if( btnConfig.isMousePressed() ){
+            
+            desenharJanela();
+            glue.setVisible( true );
+            
+        }
+        
+        if( janelaConfig.isCloseButtonPressed() ) {
+            
+            glue.setVisible( false );
+
+        }
+        
+        if( janelaConfig.isTitleBarPressed() ) {
+            draggedComponent = glue;
         }
                 
     }
@@ -251,9 +291,13 @@ public class Main extends EngineFrame {
         //Tempo de execução dos algoritmos de ordenação
         desenharTempo();
         
-        //Desenhar caixa de preenchimento e botão de reiniciar
+        //Desenhar caixa de preenchimento e botões
         txtCaixa.draw();
         btnResetAll.draw();
+        btnConfig.draw();
+        
+        //Desenhando a janela de configurações
+        janelaConfig.draw();
         
     }
     
@@ -440,6 +484,29 @@ public class Main extends EngineFrame {
         tempoInicial = System.nanoTime();
         mergeSort( array.clone() );
         tempoMerge = ( System.nanoTime() - tempoInicial );
+        
+    }
+    
+    private void arrastarJanela(){
+        
+        Vector2 mousePos = getMousePositionPoint();
+        
+        if ( isMouseButtonDown( MOUSE_BUTTON_LEFT ) ) {
+            if ( draggedComponent != null ) {
+                draggedComponent.move( mousePos.x - previousMousePos.x, mousePos.y - previousMousePos.y );
+            }
+        } else if ( isMouseButtonUp( MOUSE_BUTTON_LEFT ) ) {
+            draggedComponent = null;
+        }
+        
+        previousMousePos = mousePos;
+        
+    }
+    
+    private void desenharJanela(){
+        
+        janelaConfig = new GuiWindow( 100, 50, 600, 300, "Configurações" );
+        glue = new GuiGlue( janelaConfig );
         
     }
        
