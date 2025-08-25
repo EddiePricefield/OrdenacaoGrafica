@@ -70,8 +70,7 @@ public class Main extends EngineFrame {
     private GuiWindow janelaConfig;
     private GuiCheckBox checkOrdenado;
     private GuiSlider velSimulacao;
-    private GuiLabel labelVelSimulacao; 
-    private double valorSlider;
+    private GuiLabel labelVelSimulacao;
     
     private boolean marcado;
     
@@ -106,7 +105,6 @@ public class Main extends EngineFrame {
         
         marcado = false;
         tempoParaMudar = 0.55;
-        valorSlider = 5.5;
         
         array = new int[]{ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
         
@@ -240,8 +238,7 @@ public class Main extends EngineFrame {
         //Janela de Configurações do programa
         arrastarJanela();
         marcado = checkOrdenado.isSelected();
-        tempoParaMudar = valorSlider / 10;
-        valorSlider = velSimulacao.getValue();
+        tempoParaMudar = velSimulacao.getValue() / 10;
         
         if( btnConfig.isMousePressed() ){ 
             desenharJanela();
@@ -543,7 +540,7 @@ public class Main extends EngineFrame {
         
         janelaConfig = new GuiWindow( 295, 120, 200, 150, "Configurações" );
         labelVelSimulacao = new GuiLabel( 20, 40, 40, 20, "Velocidade da Simulação" );
-        velSimulacao = new GuiSlider( 20, 40, 130, 60, valorSlider, 1, 10, GuiSlider.HORIZONTAL );
+        velSimulacao = new GuiSlider( 20, 40, 130, 60, ( tempoParaMudar * 10 ), 1, 10, GuiSlider.HORIZONTAL );
         checkOrdenado = new GuiCheckBox( 20, 40, 20, 20, " Exibir Array Ordenado" );       
         
         checkOrdenado.setSelected( marcado );
