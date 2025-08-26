@@ -9,6 +9,7 @@ import br.com.davidbuzatto.jsge.imgui.GuiLabel;
 import br.com.davidbuzatto.jsge.imgui.GuiLabelButton;
 import br.com.davidbuzatto.jsge.imgui.GuiSlider;
 import br.com.davidbuzatto.jsge.imgui.GuiTextField;
+import br.com.davidbuzatto.jsge.imgui.GuiToggleButton;
 import br.com.davidbuzatto.jsge.imgui.GuiWindow;
 import br.com.davidbuzatto.jsge.math.Vector2;
 import java.awt.Color;
@@ -62,6 +63,8 @@ public class Main extends EngineFrame {
     private GuiLabelButton btnLink;
     private GuiButton btnResetAll;
     private GuiButton btnConfig;
+    private GuiToggleButton btnAltosValores;
+    private GuiButton btnIniAltosValores;
     
     //Variáveis para a janela de configurações
     private GuiGlue glue;
@@ -71,14 +74,15 @@ public class Main extends EngineFrame {
     private GuiCheckBox checkOrdenado;
     private GuiSlider velSimulacao;
     private GuiLabel labelVelSimulacao;
-    
-    private boolean marcado;
+        
+    private boolean marcadoOrdenado;
+    private boolean definidor;
     
     public Main() {
         
         super(
             800,                 // largura                      / width
-            450,                 // algura                       / height
+            480,                 // altura                       / height
             "Ordenações",      // título                       / title
             60,                  // quadros por segundo desejado / target FPS
             true,                // suavização                   / antialiasing
@@ -103,7 +107,8 @@ public class Main extends EngineFrame {
         
         useAsDependencyForIMGUI(); //Precisa disso aqui pra fazer os botões funcionarem
         
-        marcado = false;
+        marcadoOrdenado = false;
+        definidor = false;
         tempoParaMudar = 0.55;
         
         array = new int[]{ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
@@ -117,10 +122,15 @@ public class Main extends EngineFrame {
         
         txtCaixa = new GuiTextField( 200, 360, 215, 30, "1, 2, 3, 4, 5, 6, 7, 8, 9, 10" );
         btnResetAll = new GuiButton( 425, 360, 160, 30, "Reiniciar a Simulação" );
+        btnAltosValores = new GuiToggleButton( 610, 440, 140, 30, "Modo Altos Valores" );
         
-        btnLink = new GuiLabelButton( 10, 425, 110, 20, "@EddiePricefield" );
+        btnIniAltosValores = new GuiButton( 241, 360, 300, 30, "Iniciar Simulação de Altos Valores" );
+        btnIniAltosValores.setVisible( false );
         
-        btnConfig = new GuiButton( 760, 410, 30, 30, "🔧" );
+        btnLink = new GuiLabelButton( 10, 445, 110, 20, "@EddiePricefield" );
+        btnLink.setVisible( true );
+        
+        btnConfig = new GuiButton( 760, 440, 30, 30, "🔧" );
         desenharJanela();
         
         glue.setVisible( false );
@@ -161,6 +171,9 @@ public class Main extends EngineFrame {
         btnResetAll.update( delta );
         txtCaixa.update( delta );
         btnConfig.update( delta );
+        btnAltosValores.update( delta );
+        btnIniAltosValores.update( delta );
+        
         janelaConfig.update( delta );
         checkOrdenado.update( delta );
         velSimulacao.update( delta );
@@ -210,24 +223,10 @@ public class Main extends EngineFrame {
                
                 msg = 6; //Mensagem de sucesso após realização da simulação
                
-                //Limpar as listas de array para redesenhar do jeito certo
-                insertionArrays.clear();
-                selectionArrays.clear();
-                shellArrays.clear();
-                mergeArrays.clear();
-            
-                //Aplicar os algoritmos usando a medição do tempo e desenhando o tempo
-                aplicarAlgoritmos( valores );
-                desenharTempo();
-                
-                //Reiniciar os valores dos gráficos
-                copiaSelectionAtual = 0;
-                copiaInsertionAtual = 0;
-                copiaShellAtual = 0;
-                copiaMergeAtual = 0;
+                iniciarSimulacao( valores );
                 
                 //Exibir ou não o Array Ordenado após a realização da simulação
-                if( marcado ){
+                if( marcadoOrdenado ){
                     txtCaixa.setValue( Arrays.toString( insertionArrays.getLast() ).replace( "[", "" ).replace( "]", "" ).replace(",", "") );
                 }
                
@@ -235,10 +234,52 @@ public class Main extends EngineFrame {
 
         }
         
+        //Modo Altos Valores
+        txtCaixa.setVisible( !btnAltosValores.isSelected() );
+        btnResetAll.setVisible( !btnAltosValores.isSelected() );   
+        btnIniAltosValores.setVisible( btnAltosValores.isSelected() );
+        checkOrdenado.setEnabled( !btnAltosValores.isSelected() );
+        
+        if( btnAltosValores.isMousePressed() ){
+            
+            msg = 0; //Remover as mensagens de texto verdinhas embaixo
+            
+            if( definidor ){
+                
+                iniciarSimulacao( array );             
+                
+                definidor = false;
+                
+            } else{
+                
+                int a [] = new int[]{0};
+                iniciarSimulacao( a );  
+                
+                definidor = true;
+                
+            }
+            
+            
+        }
+        
+        if( btnIniAltosValores.isMousePressed() ){
+            
+            msg = 6;
+            
+            int[] arrayAltosValores = new int[145];
+            
+            for( int i = 0; i < 145; i++ ){
+                arrayAltosValores[i] = 145 - i;
+            }
+            
+            iniciarSimulacao( arrayAltosValores );
+            
+        }
+        
         //Janela de Configurações do programa
         arrastarJanela();
-        marcado = checkOrdenado.isSelected();
-        tempoParaMudar = velSimulacao.getValue() / 10;
+        marcadoOrdenado = checkOrdenado.isSelected();
+        tempoParaMudar = velSimulacao.getValue() / 100;
         
         if( btnConfig.isMousePressed() ){ 
             desenharJanela();
@@ -280,12 +321,6 @@ public class Main extends EngineFrame {
         //Título do Programa
         drawText("Simulação de Algoritmos de Ordenação", 25, 25, 35, BLACK);
         
-        //Desenhando os gráficos
-        desenharArray( selectionArrays.get( copiaSelectionAtual ), 25, ( getScreenHeight() / 2 ), 10, 5, BLUE );
-        desenharArray( insertionArrays.get( copiaInsertionAtual ), 225, ( getScreenHeight() / 2 ), 10, 5, RED );
-        desenharArray( shellArrays.get( copiaShellAtual ), 425, ( getScreenHeight() / 2 ), 10, 5, GREEN );
-        desenharArray( mergeArrays.get( copiaMergeAtual ), 625, ( getScreenHeight() / 2 ), 10, Arrays.stream( mergeArrays.get(0) ).max().getAsInt() , 5, ORANGE );
-        
         //Retângulos ao redor dos gráficos
         drawRectangle( 20, 100, 155, 130, BLACK );
         drawRectangle( 220, 100, 155, 130, BLACK );
@@ -295,9 +330,30 @@ public class Main extends EngineFrame {
         //Retângulo ao redor do botão de reiniciar simulação
         drawRectangle( 180, 345, 425, 60, BLACK );
         
-        //Texto com a aba de alteração do array
-        drawText( "Insira um novo valor para o array", 155, 280, 25, BLACK );
-        drawText( "(Até 10 valores, no intervalo de 0 a 99, separados por vírgula ou espaço)", 110, 315, 13, BLACK );
+        if( !btnAltosValores.isSelected() ){
+            
+            //Texto com a aba de alteração do array
+            drawText( "Insira um novo valor para o array", 155, 280, 25, BLACK );
+            drawText( "(Até 10 valores, no intervalo de 0 a 99, separados por vírgula ou espaço)", 110, 315, 13, BLACK );
+            
+            //Desenhando os gráficos
+            desenharArray( selectionArrays.get( copiaSelectionAtual ), 25, 225, 10, 5, BLUE );
+            desenharArray( insertionArrays.get( copiaInsertionAtual ), 225, 225, 10, 5, RED );
+            desenharArray( shellArrays.get( copiaShellAtual ), 425, 225, 10, 5, GREEN );
+            desenharArray( mergeArrays.get( copiaMergeAtual ), 625, 225, 10, 5, Arrays.stream( mergeArrays.get(0) ).max().getAsInt(), ORANGE );
+        
+            
+        } else{
+            
+            fillRectangle(110, 280, 200, 50, WHITE);
+            
+            //Desenhando os gráficos
+            desenharArray( selectionArrays.get( copiaSelectionAtual ), 25, 225, 1, 0, BLUE );
+            desenharArray( insertionArrays.get( copiaInsertionAtual ), 225, 225, 1, 0, RED );
+            desenharArray( shellArrays.get( copiaShellAtual ), 425, 225, 1, 0, GREEN );
+            desenharArray( mergeArrays.get( copiaMergeAtual ), 625, 225, 1, 0, Arrays.stream( mergeArrays.get(0) ).max().getAsInt(), ORANGE );
+                    
+        }
         
         //Textos com o nome dos Algoritmos
         drawText( "Selection Sort", 35, 85, 15, BLUE );
@@ -324,6 +380,8 @@ public class Main extends EngineFrame {
         txtCaixa.draw();
         btnResetAll.draw();
         btnConfig.draw();
+        btnAltosValores.draw();
+        btnIniAltosValores.draw();
         
         //Desenhando a janela de configurações
         janelaConfig.draw();
@@ -520,6 +578,26 @@ public class Main extends EngineFrame {
         
     }
     
+    private void iniciarSimulacao(int array []){
+        
+        //Limpar as listas de array para redesenhar do jeito certo
+        insertionArrays.clear();
+        selectionArrays.clear();
+        shellArrays.clear();
+        mergeArrays.clear();
+
+        //Aplicar os algoritmos usando a medição do tempo e desenhando o tempo
+        aplicarAlgoritmos( array );
+        desenharTempo();
+
+        //Reiniciar os valores dos gráficos
+        copiaSelectionAtual = 0;
+        copiaInsertionAtual = 0;
+        copiaShellAtual = 0;
+        copiaMergeAtual = 0;
+        
+    }
+    
     private void arrastarJanela(){
         
         Vector2 mousePos = getMousePositionPoint();
@@ -538,17 +616,17 @@ public class Main extends EngineFrame {
     
     private void desenharJanela(){
         
-        janelaConfig = new GuiWindow( 295, 120, 200, 150, "Configurações" );
+        janelaConfig = new GuiWindow( 295, 170, 200, 150, "Configurações" );
         labelVelSimulacao = new GuiLabel( 20, 40, 40, 20, "Velocidade da Simulação" );
-        velSimulacao = new GuiSlider( 20, 40, 130, 60, ( tempoParaMudar * 10 ), 1, 10, GuiSlider.HORIZONTAL );
+        velSimulacao = new GuiSlider( 20, 40, 130, 60, ( tempoParaMudar * 100 ), 1, 100, GuiSlider.HORIZONTAL );
         checkOrdenado = new GuiCheckBox( 20, 40, 20, 20, " Exibir Array Ordenado" );       
         
-        checkOrdenado.setSelected( marcado );
+        checkOrdenado.setSelected( marcadoOrdenado );
         
         glue = new GuiGlue( janelaConfig );
         glue.addChild( labelVelSimulacao, 20, 40);
         glue.addChild( velSimulacao, 35, 45 );
-        glue.addChild( checkOrdenado, 10, 110 );        
+        glue.addChild( checkOrdenado, 10, 110 );
             
     }
        
@@ -574,7 +652,7 @@ public class Main extends EngineFrame {
     
     //Preciso criar um outro método exclusivo pro MergeSort, senão a parte visual dele vai ficar toda feia comparada com as outras. 
     
-    private void desenharArray(int[] a, int xIni, int yIni, int tamanho, int max, int espaco, Color cor) { //Mas ai é só eu passar o valor maximo do array primário e usar ele como base pra todo o resto
+    private void desenharArray(int[] a, int xIni, int yIni, int tamanho, int espaco, int max, Color cor) { //Mas ai é só eu passar o valor maximo do array primário e usar ele como base pra todo o resto
 
         for (int i = 0; i < a.length; i++) {
 
