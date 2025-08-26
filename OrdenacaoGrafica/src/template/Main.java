@@ -81,11 +81,13 @@ public class Main extends EngineFrame {
     private GuiComponent draggedComponent;
     private GuiWindow janelaConfig;
     private GuiCheckBox checkOrdenado;
+    private GuiCheckBox checkSeed;
     private GuiSlider velSimulacao;
     private GuiLabel labelVelSimulacao;
     
     //Variáveis de memória
     private boolean marcadoOrdenado;
+    private boolean marcadoSeed;
     private boolean definidor;
     private boolean exibirTempo;
     private boolean exibirTempoRandom;
@@ -120,6 +122,7 @@ public class Main extends EngineFrame {
         useAsDependencyForIMGUI(); //Precisa disso aqui pra fazer os botões funcionarem
         
         marcadoOrdenado = false;
+        marcadoSeed = false;
         definidor = false;
         exibirTempo = false;
         exibirTempoRandom = false;
@@ -206,8 +209,10 @@ public class Main extends EngineFrame {
         
         janelaConfig.update( delta );
         checkOrdenado.update( delta );
+        checkSeed.update( delta );
         velSimulacao.update( delta );
         labelVelSimulacao.update( delta );
+        
         btnLink.update( delta );
         
         //Resetar a Simulação
@@ -273,20 +278,39 @@ public class Main extends EngineFrame {
         dropdownList.setVisible( btnAltosValores.isSelected() );
         btnRandom.setVisible( btnAltosValores.isSelected() );
         checkOrdenado.setEnabled( !btnAltosValores.isSelected() );
+        checkSeed.setEnabled( btnAltosValores.isSelected() );
         
         if( btnRandom.isMousePressed() ){
             
             exibirTempoRandom = true;
             
-            Random rnd = new Random();
-            
-            int[] arrayRandom = new int[590];
+            if( checkSeed.isSelected() ){
+                
+                Random rnd = new Random( 33550336 );
+                
+                int[] arrayRandom = new int[590];
 
-            for ( int i = 0; i < 590; i++ ) {
-                arrayRandom[i] = rnd.nextInt(589);
+                for( int i = 0; i < 590; i++ ) {
+                    arrayRandom[i] = rnd.nextInt( 589 );
+                }
+
+                iniciarSimulacaoRandom( arrayRandom );
+                
+            } else{
+                
+               Random rnd = new Random(); 
+               
+                int[] arrayRandom = new int[590];
+
+                for( int i = 0; i < 590; i++ ) {
+                    arrayRandom[i] = rnd.nextInt( 589 );
+                }
+
+                iniciarSimulacaoRandom( arrayRandom );
+                
             }
-
-            iniciarSimulacaoRandom( arrayRandom );
+            
+            
             
         }
                 
@@ -344,6 +368,7 @@ public class Main extends EngineFrame {
         //Janela de Configurações do programa
         arrastarJanela();
         marcadoOrdenado = checkOrdenado.isSelected();
+        marcadoSeed = checkSeed.isSelected();
         tempoParaMudar = velSimulacao.getValue() / 100;
         
         if( btnConfig.isMousePressed() ){ 
@@ -414,8 +439,8 @@ public class Main extends EngineFrame {
             
             //Desenhando a Função de Array Aleatório
             drawRectangle( 30, 260, 730, 80, BLACK );
-            drawRectangle( 630, 305, 100, 25,BLACK );
-                       
+            drawRectangle( 630, 305, 100, 25, BLACK );
+            drawText( "Randomizer", 650, 345, 15, PINK);                       
             
             //Desenhando o Aleatório
             
@@ -494,6 +519,7 @@ public class Main extends EngineFrame {
         //Desenhando a janela de configurações
         janelaConfig.draw();
         checkOrdenado.draw();
+        checkSeed.draw();
         velSimulacao.draw();
         labelVelSimulacao.draw();
         btnLink.draw();
@@ -770,17 +796,20 @@ public class Main extends EngineFrame {
     
     private void desenharJanela(){
         
-        janelaConfig = new GuiWindow( 295, 170, 200, 150, "Configurações" );
+        janelaConfig = new GuiWindow( 295, 170, 200, 180, "Configurações" );
         labelVelSimulacao = new GuiLabel( 20, 40, 40, 20, "Velocidade da Simulação" );
         velSimulacao = new GuiSlider( 20, 40, 130, 60, ( tempoParaMudar * 100 ), 1, 100, GuiSlider.HORIZONTAL );
-        checkOrdenado = new GuiCheckBox( 20, 40, 20, 20, " Exibir Array Ordenado" );       
+        checkOrdenado = new GuiCheckBox( 20, 40, 20, 20, " Exibir Array Ordenado" );
+        checkSeed = new GuiCheckBox( 20, 40, 20, 20, " Habilitar Seed Fixa" );    
         
         checkOrdenado.setSelected( marcadoOrdenado );
+        checkSeed.setSelected( marcadoSeed );
         
         glue = new GuiGlue( janelaConfig );
         glue.addChild( labelVelSimulacao, 20, 40);
         glue.addChild( velSimulacao, 35, 45 );
         glue.addChild( checkOrdenado, 10, 110 );
+        glue.addChild( checkSeed, 10, 140 );
             
     }
        
