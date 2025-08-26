@@ -4,6 +4,7 @@ import br.com.davidbuzatto.jsge.core.engine.EngineFrame;
 import br.com.davidbuzatto.jsge.imgui.GuiButton;
 import br.com.davidbuzatto.jsge.imgui.GuiCheckBox;
 import br.com.davidbuzatto.jsge.imgui.GuiComponent;
+import br.com.davidbuzatto.jsge.imgui.GuiDropdownList;
 import br.com.davidbuzatto.jsge.imgui.GuiGlue;
 import br.com.davidbuzatto.jsge.imgui.GuiLabel;
 import br.com.davidbuzatto.jsge.imgui.GuiLabelButton;
@@ -18,6 +19,7 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Random;
 
 /**
  * Modelo de projeto básico da JSGE.
@@ -66,6 +68,13 @@ public class Main extends EngineFrame {
     private GuiToggleButton btnAltosValores;
     private GuiButton btnIniAltosValores;
     
+    //Variáveis para a implementação dos Arrays Aleatórios
+    private GuiDropdownList dropdownList;
+    private GuiButton btnRandom;
+    private List<int[]> randomArrays;
+    private double tempoRandom;
+    private int copiaRandomAtual;
+    
     //Variáveis para a janela de configurações
     private GuiGlue glue;
     private Vector2 previousMousePos;
@@ -79,6 +88,7 @@ public class Main extends EngineFrame {
     private boolean marcadoOrdenado;
     private boolean definidor;
     private boolean exibirTempo;
+    private boolean exibirTempoRandom;
     
     public Main() {
         
@@ -112,6 +122,7 @@ public class Main extends EngineFrame {
         marcadoOrdenado = false;
         definidor = false;
         exibirTempo = false;
+        exibirTempoRandom = false;
         
         tempoParaMudar = 0.55;
         
@@ -122,6 +133,8 @@ public class Main extends EngineFrame {
         shellArrays = new ArrayList<>();
         mergeArrays = new ArrayList<>();
         
+        randomArrays = new ArrayList<>();
+        
         aplicarAlgoritmos( array );
         
         txtCaixa = new GuiTextField( 200, 370, 215, 30, "1, 2, 3, 4, 5, 6, 7, 8, 9, 10" );
@@ -131,8 +144,14 @@ public class Main extends EngineFrame {
         btnIniAltosValores = new GuiButton( 241, 370, 300, 30, "Iniciar Simulação de Altos Valores" );
         btnIniAltosValores.setVisible( false );
         
+        dropdownList = new GuiDropdownList( 630, 270, 100, 25, List.<String>of( "Selection", "Insertion", "Shell", "Merge" ) );
+        dropdownList.setVisible( false );
+               
+        btnRandom = new GuiButton( 737, 270, 15, 60, "▶" );
+        btnRandom.setVisible( false );
+        
         btnLink = new GuiLabelButton( 10, 445, 110, 20, "@EddiePricefield" );
-        btnLink.setVisible( false );
+        btnLink.setVisible( true );
         
         btnConfig = new GuiButton( 760, 440, 30, 30, "🔧" );
         desenharJanela();
@@ -168,6 +187,10 @@ public class Main extends EngineFrame {
             if ( copiaInsertionAtual < insertionArrays.size() - 1 ){ copiaInsertionAtual++; }
             if ( copiaShellAtual < shellArrays.size() - 1 ){ copiaShellAtual++; }
             if ( copiaMergeAtual < mergeArrays.size() - 1 ){ copiaMergeAtual++; }
+            
+            for( int i = 0; i < 2; i++ ){
+               if ( copiaRandomAtual < randomArrays.size() - 1 ){ copiaRandomAtual++; } //Jeito que achei pra fazer isso ser 2x mais rápido que os outros
+            }   
                 
         }
 
@@ -177,6 +200,9 @@ public class Main extends EngineFrame {
         btnConfig.update( delta );
         btnAltosValores.update( delta );
         btnIniAltosValores.update( delta );
+        
+        dropdownList.update( delta );
+        btnRandom.update( delta );
         
         janelaConfig.update( delta );
         checkOrdenado.update( delta );
@@ -244,12 +270,37 @@ public class Main extends EngineFrame {
         txtCaixa.setVisible( !btnAltosValores.isSelected() );
         btnResetAll.setVisible( !btnAltosValores.isSelected() );   
         btnIniAltosValores.setVisible( btnAltosValores.isSelected() );
+        dropdownList.setVisible( btnAltosValores.isSelected() );
+        btnRandom.setVisible( btnAltosValores.isSelected() );
         checkOrdenado.setEnabled( !btnAltosValores.isSelected() );
         
+        if( btnRandom.isMousePressed() ){
+            
+            exibirTempoRandom = true;
+            
+            Random rnd = new Random();
+            
+            int[] arrayRandom = new int[590];
+
+            for ( int i = 0; i < 590; i++ ) {
+                arrayRandom[i] = rnd.nextInt(589);
+            }
+
+            iniciarSimulacaoRandom( arrayRandom );
+            
+        }
+                
         if( btnAltosValores.isMousePressed() ){
             
             exibirTempo = false;
+            exibirTempoRandom = false;
             msg = 0; //Remover as mensagens de texto verdinhas embaixo
+            
+            int[] arrayRandomInicial = new int[590];
+
+            for ( int i = 0; i < 590; i++ ) {
+                arrayRandomInicial[i] = i;
+            }
             
             if( definidor ){
                 
@@ -265,7 +316,8 @@ public class Main extends EngineFrame {
                     a[i] = i;
                 }
                 
-                iniciarSimulacao( a );  
+                iniciarSimulacao( a ); 
+                iniciarSimulacaoRandom( arrayRandomInicial );
                 
                 definidor = true;
                 
@@ -343,6 +395,8 @@ public class Main extends EngineFrame {
         //Retângulo ao redor do botão de reiniciar simulação
         drawRectangle( 180, 355, 425, 60, BLACK );
         
+        double escala = 120.0;
+        
         if( !btnAltosValores.isSelected() ){
             
             //Texto com a aba de alteração do array
@@ -350,27 +404,59 @@ public class Main extends EngineFrame {
             drawText( "(Até 10 valores, no intervalo de 0 a 99, separados por vírgula ou espaço)", 110, 315, 13, BLACK );
             
             //Desenhando os gráficos
-            desenharArray( selectionArrays.get( copiaSelectionAtual ), 25, 225, 10, 5, BLUE );
-            desenharArray( insertionArrays.get( copiaInsertionAtual ), 225, 225, 10, 5, RED );
-            desenharArray( shellArrays.get( copiaShellAtual ), 425, 225, 10, 5, GREEN );
-            desenharArray( mergeArrays.get( copiaMergeAtual ), 625, 225, 10, 5, Arrays.stream( mergeArrays.get(0) ).max().getAsInt(), ORANGE );
+            desenharArray( selectionArrays.get( copiaSelectionAtual ), 25, 225, 10, 5, escala, BLUE );
+            desenharArray( insertionArrays.get( copiaInsertionAtual ), 225, 225, 10, 5, escala, RED );
+            desenharArray( shellArrays.get( copiaShellAtual ), 425, 225, 10, 5, escala, GREEN );
+            desenharArray( mergeArrays.get( copiaMergeAtual ), 625, 225, 10, 5, Arrays.stream( mergeArrays.get(0) ).max().getAsInt(), escala, ORANGE );
         
             
         } else{
             
-            fillRectangle( 110, 280, 200, 50, WHITE );
-            fillRectangle( 55, 250, 710, 30, WHITE );
+            //Desenhando a Função de Array Aleatório
+            drawRectangle( 30, 260, 730, 80, BLACK );
+            drawRectangle( 630, 305, 100, 25,BLACK );
+                       
+            
+            //Desenhando o Aleatório
+            
+            int tamanho = 1, espaco = 0;
+            
+            if( randomArrays.isEmpty() ){
+                
+                int[] arrayRandomInicial = new int[590];
+
+                for ( int i = 0; i < 590; i++ ) {
+                    arrayRandomInicial[i] = i;
+                }
+            
+                iniciarSimulacaoRandom( arrayRandomInicial );
+                
+            }
+            
+            if( !randomArrays.isEmpty() ){
+                             
+                if (dropdownList.getSelectedItemIndex() == 3) {
+                    desenharArray( randomArrays.get(copiaRandomAtual ), 35, 335, tamanho, espaco, Arrays.stream( randomArrays.get( 0 )).max().getAsInt(), 70, PINK );
+                } else{
+                    desenharArray( randomArrays.get( copiaRandomAtual ), 35, 335, tamanho, espaco, 70, PINK );
+                }
+                
+            }
             
             //Desenhando os gráficos
-            desenharArray( selectionArrays.get( copiaSelectionAtual ), 25, 225, 1, 0, BLUE );
-            desenharArray( insertionArrays.get( copiaInsertionAtual ), 225, 225, 1, 0, RED );
-            desenharArray( shellArrays.get( copiaShellAtual ), 425, 225, 1, 0, GREEN );
-            desenharArray( mergeArrays.get( copiaMergeAtual ), 625, 225, 1, 0, Arrays.stream( mergeArrays.get(0) ).max().getAsInt(), ORANGE );
+            desenharArray( selectionArrays.get( copiaSelectionAtual ), 25, 225, tamanho, espaco, escala, BLUE );
+            desenharArray( insertionArrays.get( copiaInsertionAtual ), 225, 225, tamanho, espaco, escala, RED );
+            desenharArray( shellArrays.get( copiaShellAtual ), 425, 225, tamanho, espaco, escala, GREEN );
+            desenharArray( mergeArrays.get( copiaMergeAtual ), 625, 225, tamanho, espaco, Arrays.stream( mergeArrays.get(0) ).max().getAsInt(), escala, ORANGE );
                     
         }
         
         if( exibirTempo ){
             desenharTempo();
+        }
+        
+        if( exibirTempoRandom ){
+            drawText( String.format( "%.4fms", tempoRandom/1000000 ), 635, 315, 15, PINK );
         }
         
         //Textos com o nome dos Algoritmos
@@ -401,6 +487,10 @@ public class Main extends EngineFrame {
         btnAltosValores.draw();
         btnIniAltosValores.draw();
         
+        //Desenhar a parte de Arrays Aleatórios
+        dropdownList.draw();
+        btnRandom.draw();
+        
         //Desenhando a janela de configurações
         janelaConfig.draw();
         checkOrdenado.draw();
@@ -412,7 +502,7 @@ public class Main extends EngineFrame {
     
     //Implementando os Algoritmos de Ordenação (a implementação estava disponível nos próprios Slides)
     
-    private void selectionSort( int[] array ) {
+    private void selectionSort( int[] array, List<int[]> lista ) {
         
         for ( int i = 0; i < array.length; i++ ) {
             
@@ -423,21 +513,21 @@ public class Main extends EngineFrame {
                 }
             }
             
-            if ( selectionArrays.isEmpty() || !Arrays.equals( array, selectionArrays.get(selectionArrays.size() - 1)) ){
-                copiarArray( array, selectionArrays );
+            if ( lista.isEmpty() || !Arrays.equals( array, lista.get(lista.size() - 1)) ){
+                copiarArray( array, lista );
             }
             
             trocar( array, i, min );
             
         }
         
-        if ( selectionArrays.isEmpty() || !Arrays.equals( array, selectionArrays.get(selectionArrays.size() - 1)) ){
-           copiarArray( array, selectionArrays );
+        if ( lista.isEmpty() || !Arrays.equals( array, lista.get(lista.size() - 1)) ){
+           copiarArray( array, lista );
         }
         
     }
     
-    private void insertionSort( int[] array ) {
+    private void insertionSort( int[] array, List<int[]> lista ) {
         
         for ( int i = 1; i < array.length; i++ ) {
             
@@ -445,27 +535,27 @@ public class Main extends EngineFrame {
             
             while (j > 0 && array[j-1] > array[j]) {
                 
-                if ( insertionArrays.isEmpty() || !Arrays.equals( array, insertionArrays.get(insertionArrays.size() - 1)) ){
-                    copiarArray( array, insertionArrays );
+                if ( lista.isEmpty() || !Arrays.equals( array, lista.get(lista.size() - 1)) ){
+                    copiarArray( array, lista );
                 }
                 
                 trocar ( array, j-1, j );
                 j--;
             }
             
-            if ( insertionArrays.isEmpty() || !Arrays.equals( array, insertionArrays.get(insertionArrays.size() - 1)) ){
-                copiarArray( array, insertionArrays );
+            if ( lista.isEmpty() || !Arrays.equals( array, lista.get(lista.size() - 1)) ){
+                copiarArray( array, lista );
             }
             
         }
         
-        if ( insertionArrays.isEmpty() || !Arrays.equals( array, insertionArrays.get(insertionArrays.size() - 1)) ){
-            copiarArray( array, insertionArrays );
+        if ( lista.isEmpty() || !Arrays.equals( array, lista.get(lista.size() - 1)) ){
+            copiarArray( array, lista );
         }
         
     }
     
-    private void shellSort( int[] array){
+    private void shellSort( int[] array, List<int[]> lista ){
 
         int h = 1;
         
@@ -481,8 +571,8 @@ public class Main extends EngineFrame {
 
                 while ( j >= h && array[j-h] > array[j] ) {
                     
-                    if ( shellArrays.size() == 0 || !Arrays.equals( array, shellArrays.get(shellArrays.size() - 1)) ){
-                        copiarArray( array, shellArrays );
+                    if ( lista.size() == 0 || !Arrays.equals( array, lista.get(lista.size() - 1)) ){
+                        copiarArray( array, lista );
                     }
                     
                     trocar( array, j-h, j );
@@ -490,40 +580,40 @@ public class Main extends EngineFrame {
                 }
             }
 
-            if ( shellArrays.size() == 0 || !Arrays.equals( array, shellArrays.get(shellArrays.size() - 1)) ){
-               copiarArray( array, shellArrays );
+            if ( lista.size() == 0 || !Arrays.equals( array, lista.get(lista.size() - 1)) ){
+               copiarArray( array, lista );
             }
             
             h = h / 3;
 
         }
         
-        copiarArray( array, shellArrays );
+        copiarArray( array, lista );
 
     }
     
-    private void mergeSort( int[] array ) {
+    private void mergeSort( int[] array, List<int[]> lista ) {
         
-        copiarArray( array, mergeArrays );
+        copiarArray( array, lista );
         int length = array.length;
         int[] tempMS = new int[length];
-        topDown( array, 0, length - 1, tempMS );
+        topDown( array, 0, length - 1, tempMS, lista );
                 
     }
     
-    private void topDown( int[] array, int start, int end, int[] tempMS ) {
+    private void topDown( int[] array, int start, int end, int[] tempMS, List<int[]> lista ) {
 
         int middle;
 
         if ( start < end ) {
             middle = ( start + end ) / 2;
-            topDown( array, start, middle, tempMS ); // esquerda
-            topDown( array, middle + 1, end, tempMS ); // direita
-            merge( array, start, middle, end, tempMS ); // intercalação
+            topDown( array, start, middle, tempMS, lista ); // esquerda
+            topDown( array, middle + 1, end, tempMS, lista ); // direita
+            merge( array, start, middle, end, tempMS, lista ); // intercalação
         }
     }
     
-    private void merge( int[] array, int start, int middle, int end, int[] tempMS ) {
+    private void merge( int[] array, int start, int middle, int end, int[] tempMS, List<int[]> lista ) {
 
         int i = start;
         int j = middle + 1;
@@ -545,8 +635,8 @@ public class Main extends EngineFrame {
             }
          
             // Achei uma maneira de registrar só se o passo atual for diferente do anterior, mas não sei se seria bom usar ou não
-            if ( mergeArrays.isEmpty() || !Arrays.equals( array, mergeArrays.get(mergeArrays.size() - 1)) ){
-                copiarArray( array, mergeArrays );
+            if ( lista.isEmpty() || !Arrays.equals( array, lista.get(lista.size() - 1)) ){
+                copiarArray( array, lista );
             }            
          
         }
@@ -579,24 +669,63 @@ public class Main extends EngineFrame {
         long tempoInicial; //Não sabia da existência do "nanoTime", ele é bom de usar
         
         tempoInicial = System.nanoTime();
-        selectionSort( array.clone() );
+        selectionSort( array.clone(), selectionArrays );
         tempoSelection = ( System.nanoTime() - tempoInicial );
         
         tempoInicial = System.nanoTime();
-        insertionSort( array.clone() );
+        insertionSort( array.clone(), insertionArrays );
         tempoInsertion = ( System.nanoTime() - tempoInicial );
         
         tempoInicial = System.nanoTime();
-        shellSort( array.clone() );
+        shellSort( array.clone(), shellArrays );
         tempoShell = ( System.nanoTime() - tempoInicial );
         
         tempoInicial = System.nanoTime();
-        mergeSort( array.clone() );
+        mergeSort( array.clone(), mergeArrays );
         tempoMerge = ( System.nanoTime() - tempoInicial );
         
     }
+
+    private void aplicarAlgoritmosRandom( int[] array ){
+        
+        long tempoInicial; //Não sabia da existência do "nanoTime", ele é bom de usar
+        
+        if( dropdownList.getSelectedItemIndex() == 0 ){
+            
+            tempoInicial = System.nanoTime();
+            selectionSort( array.clone(), randomArrays );
+            tempoRandom = ( System.nanoTime() - tempoInicial );
+              
+        }
+        
+        if( dropdownList.getSelectedItemIndex() == 1 ){
+            
+            tempoInicial = System.nanoTime();
+            insertionSort( array.clone(), randomArrays );
+            tempoRandom = ( System.nanoTime() - tempoInicial );
+              
+        }
+        
+        if( dropdownList.getSelectedItemIndex() == 2 ){
+            
+            tempoInicial = System.nanoTime();
+            shellSort( array.clone(), randomArrays );
+            tempoRandom = ( System.nanoTime() - tempoInicial );
+              
+        }
+        
+        if( dropdownList.getSelectedItemIndex() == 3 ){
+            
+            tempoInicial = System.nanoTime();
+            mergeSort( array.clone(), randomArrays );
+            tempoRandom = ( System.nanoTime() - tempoInicial );
+              
+        }
+        
+        
+    }
     
-    private void iniciarSimulacao(int array []){
+    private void iniciarSimulacao( int array [] ){
         
         //Limpar as listas de array para redesenhar do jeito certo
         insertionArrays.clear();
@@ -612,6 +741,14 @@ public class Main extends EngineFrame {
         copiaInsertionAtual = 0;
         copiaShellAtual = 0;
         copiaMergeAtual = 0;
+        
+    }
+    
+    private void iniciarSimulacaoRandom( int array[] ){
+        
+        randomArrays.clear();        
+        aplicarAlgoritmosRandom( array );        
+        copiaRandomAtual = 0;
         
     }
     
@@ -649,12 +786,12 @@ public class Main extends EngineFrame {
        
     //Desenhando o gráfico
     
-    private void desenharArray( int[] a, int xIni, int yIni, int tamanho, int espaco, Color cor ) {
+    private void desenharArray( int[] a, int xIni, int yIni, int tamanho, int espaco, double escala, Color cor ) {
         
         for ( int i = 0; i < a.length; i++ ) {
             
             int max = Arrays.stream( a ).max().getAsInt(); //Confeso que não fazia ideia da existencia disso daqui, mas fez o que eu queria
-            double altura = ( a[i] * ( 120.0 / max ) ); //usando o valor maximo do meu retângulo e do array pra criar uma escala pra altura
+            double altura = ( a[i] * ( escala / max ) ); //usando o valor maximo do meu retângulo e do array pra criar uma escala pra altura
             
             fillRectangle(
                     xIni + ( tamanho + espaco ) * i,
@@ -669,11 +806,11 @@ public class Main extends EngineFrame {
     
     //Preciso criar um outro método exclusivo pro MergeSort, senão a parte visual dele vai ficar toda feia comparada com as outras. 
     
-    private void desenharArray(int[] a, int xIni, int yIni, int tamanho, int espaco, int max, Color cor) { //Mas ai é só eu passar o valor maximo do array primário e usar ele como base pra todo o resto
+    private void desenharArray(int[] a, int xIni, int yIni, int tamanho, int espaco, int max, double escala, Color cor) { //Mas ai é só eu passar o valor maximo do array primário e usar ele como base pra todo o resto
 
         for (int i = 0; i < a.length; i++) {
 
-            double altura = ( a[i] * ( 120.0 / max ) ); //usando o valor maximo do meu retângulo e do array pra criar uma escala pra altura
+            double altura = ( a[i] * ( escala / max ) ); //usando o valor maximo do meu retângulo e do array pra criar uma escala pra altura
 
             fillRectangle(
                     xIni + (tamanho + espaco) * i,
