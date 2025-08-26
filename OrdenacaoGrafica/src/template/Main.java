@@ -74,9 +74,11 @@ public class Main extends EngineFrame {
     private GuiCheckBox checkOrdenado;
     private GuiSlider velSimulacao;
     private GuiLabel labelVelSimulacao;
-        
+    
+    //Variáveis de memória
     private boolean marcadoOrdenado;
     private boolean definidor;
+    private boolean exibirTempo;
     
     public Main() {
         
@@ -109,6 +111,8 @@ public class Main extends EngineFrame {
         
         marcadoOrdenado = false;
         definidor = false;
+        exibirTempo = false;
+        
         tempoParaMudar = 0.55;
         
         array = new int[]{ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
@@ -120,15 +124,15 @@ public class Main extends EngineFrame {
         
         aplicarAlgoritmos( array );
         
-        txtCaixa = new GuiTextField( 200, 360, 215, 30, "1, 2, 3, 4, 5, 6, 7, 8, 9, 10" );
-        btnResetAll = new GuiButton( 425, 360, 160, 30, "Reiniciar a Simulação" );
+        txtCaixa = new GuiTextField( 200, 370, 215, 30, "1, 2, 3, 4, 5, 6, 7, 8, 9, 10" );
+        btnResetAll = new GuiButton( 425, 370, 160, 30, "Reiniciar a Simulação" );
         btnAltosValores = new GuiToggleButton( 610, 440, 140, 30, "Modo Altos Valores" );
         
-        btnIniAltosValores = new GuiButton( 241, 360, 300, 30, "Iniciar Simulação de Altos Valores" );
+        btnIniAltosValores = new GuiButton( 241, 370, 300, 30, "Iniciar Simulação de Altos Valores" );
         btnIniAltosValores.setVisible( false );
         
         btnLink = new GuiLabelButton( 10, 445, 110, 20, "@EddiePricefield" );
-        btnLink.setVisible( true );
+        btnLink.setVisible( false );
         
         btnConfig = new GuiButton( 760, 440, 30, 30, "🔧" );
         desenharJanela();
@@ -182,6 +186,8 @@ public class Main extends EngineFrame {
         
         //Resetar a Simulação
         if ( btnResetAll.isMousePressed() ) {
+            
+            exibirTempo = true;
             
             //Pegando os valores do TextField e transformando para uma tabela do tipo int
             String[] valoresBrutos = txtCaixa.getValue().split( "[, ]+" ); //Aprendi isso pesquisando um jeito de pegar tanto espaço quanto vírgula
@@ -242,6 +248,7 @@ public class Main extends EngineFrame {
         
         if( btnAltosValores.isMousePressed() ){
             
+            exibirTempo = false;
             msg = 0; //Remover as mensagens de texto verdinhas embaixo
             
             if( definidor ){
@@ -252,7 +259,12 @@ public class Main extends EngineFrame {
                 
             } else{
                 
-                int a [] = new int[]{0};
+                int[] a = new int[145];
+            
+                for( int i = 0; i < 145; i++ ){
+                    a[i] = i;
+                }
+                
                 iniciarSimulacao( a );  
                 
                 definidor = true;
@@ -264,6 +276,7 @@ public class Main extends EngineFrame {
         
         if( btnIniAltosValores.isMousePressed() ){
             
+            exibirTempo = true;
             msg = 6;
             
             int[] arrayAltosValores = new int[145];
@@ -328,7 +341,7 @@ public class Main extends EngineFrame {
         drawRectangle( 620, 100, 155, 130, BLACK );
         
         //Retângulo ao redor do botão de reiniciar simulação
-        drawRectangle( 180, 345, 425, 60, BLACK );
+        drawRectangle( 180, 355, 425, 60, BLACK );
         
         if( !btnAltosValores.isSelected() ){
             
@@ -345,7 +358,8 @@ public class Main extends EngineFrame {
             
         } else{
             
-            fillRectangle(110, 280, 200, 50, WHITE);
+            fillRectangle( 110, 280, 200, 50, WHITE );
+            fillRectangle( 55, 250, 710, 30, WHITE );
             
             //Desenhando os gráficos
             desenharArray( selectionArrays.get( copiaSelectionAtual ), 25, 225, 1, 0, BLUE );
@@ -355,6 +369,10 @@ public class Main extends EngineFrame {
                     
         }
         
+        if( exibirTempo ){
+            desenharTempo();
+        }
+        
         //Textos com o nome dos Algoritmos
         drawText( "Selection Sort", 35, 85, 15, BLUE );
         drawText( "Insertion Sort", 235, 85, 15, RED );
@@ -362,19 +380,19 @@ public class Main extends EngineFrame {
         drawText( "Merge Sort", 655, 85, 15, ORANGE );
         
         //Texto com as mensagens de erro
+        
+        int y = 425;
+        
         switch (msg) { //O próprio NetBeans sugeriu para mim usar um "rule switch" e fez as alterações
-            case 1 -> drawText( "Erro: Insira no máximo 10 valores para o novo array!", 165, 415, 15, RED );
-            case 2 -> drawText( "Erro: Insira apenas valores entre 0 a 99!", 210, 415, 15, RED );
-            case 3 -> drawText( "Erro: Insira ao menos um valor no primeiro indice para criar um novo array!", 65, 415, 15, RED );
-            case 4 -> drawText( "Erro: Insira apenas números!", 270, 415, 15, RED );
-            case 5 -> drawText( "Erro: Não há suporte para números negativos!", 195, 415, 15, RED );
-            case 6 -> drawText( "Simulação realizada com sucesso!", 250, 415, 15, GREEN );
+            case 1 -> drawText( "Erro: Insira no máximo 10 valores para o novo array!", 165, y, 15, RED );
+            case 2 -> drawText( "Erro: Insira apenas valores entre 0 a 99!", 210, y, 15, RED );
+            case 3 -> drawText( "Erro: Insira ao menos um valor no primeiro indice para criar um novo array!", 65, y, 15, RED );
+            case 4 -> drawText( "Erro: Insira apenas números!", 270, y, 15, RED );
+            case 5 -> drawText( "Erro: Não há suporte para números negativos!", 195, y, 15, RED );
+            case 6 -> drawText( "Simulação realizada com sucesso!", 250, y, 15, GREEN );
             default -> {
             }
         }
-        
-        //Tempo de execução dos algoritmos de ordenação
-        desenharTempo();
         
         //Desenhar caixa de preenchimento e botões
         txtCaixa.draw();
@@ -588,7 +606,6 @@ public class Main extends EngineFrame {
 
         //Aplicar os algoritmos usando a medição do tempo e desenhando o tempo
         aplicarAlgoritmos( array );
-        desenharTempo();
 
         //Reiniciar os valores dos gráficos
         copiaSelectionAtual = 0;
