@@ -2,12 +2,14 @@ package template;
 
 import br.com.davidbuzatto.jsge.core.engine.EngineFrame;
 import br.com.davidbuzatto.jsge.imgui.GuiButton;
+import br.com.davidbuzatto.jsge.imgui.GuiButtonGroup;
 import br.com.davidbuzatto.jsge.imgui.GuiCheckBox;
 import br.com.davidbuzatto.jsge.imgui.GuiComponent;
 import br.com.davidbuzatto.jsge.imgui.GuiDropdownList;
 import br.com.davidbuzatto.jsge.imgui.GuiGlue;
 import br.com.davidbuzatto.jsge.imgui.GuiLabel;
 import br.com.davidbuzatto.jsge.imgui.GuiLabelButton;
+import br.com.davidbuzatto.jsge.imgui.GuiRadioButton;
 import br.com.davidbuzatto.jsge.imgui.GuiSlider;
 import br.com.davidbuzatto.jsge.imgui.GuiTextField;
 import br.com.davidbuzatto.jsge.imgui.GuiToggleButton;
@@ -84,8 +86,13 @@ public class Main extends EngineFrame {
     private GuiCheckBox checkSeed;
     private GuiSlider velSimulacao;
     private GuiLabel labelVelSimulacao;
+    private GuiLabel labelTipoMerge;
+    private GuiRadioButton radioIterativo;
+    private GuiRadioButton radioRecursivo;
+    private GuiButtonGroup buttonGroupMerge;
     
     //Variáveis de memória
+    private boolean mergeR;
     private boolean marcadoOrdenado;
     private boolean marcadoSeed;
     private boolean definidor;
@@ -120,6 +127,8 @@ public class Main extends EngineFrame {
     public void create() {
         
         useAsDependencyForIMGUI(); //Precisa disso aqui pra fazer os botões funcionarem
+        
+        mergeR = false;
         
         marcadoOrdenado = false;
         marcadoSeed = false;
@@ -212,6 +221,9 @@ public class Main extends EngineFrame {
         checkSeed.update( delta );
         velSimulacao.update( delta );
         labelVelSimulacao.update( delta );
+        labelTipoMerge.update( delta );
+        radioIterativo.update( delta );
+        radioRecursivo.update( delta );
         
         btnLink.update( delta );
         
@@ -369,6 +381,8 @@ public class Main extends EngineFrame {
         arrastarJanela();
         marcadoOrdenado = checkOrdenado.isSelected();
         marcadoSeed = checkSeed.isSelected();
+        mergeR = !radioIterativo.isSelected();
+        mergeR = radioRecursivo.isSelected();
         tempoParaMudar = velSimulacao.getValue() / 100;
         
         if( btnConfig.isMousePressed() ){ 
@@ -523,6 +537,9 @@ public class Main extends EngineFrame {
         velSimulacao.draw();
         labelVelSimulacao.draw();
         btnLink.draw();
+        labelTipoMerge.draw();
+        radioIterativo.draw();
+        radioRecursivo.draw();
         
     }
     
@@ -538,12 +555,12 @@ public class Main extends EngineFrame {
                     min = j;
                 }
             }
+                       
+            trocar( array, i, min );
             
             if ( lista.isEmpty() || !Arrays.equals( array, lista.get(lista.size() - 1)) ){
                 copiarArray( array, lista );
             }
-            
-            trocar( array, i, min );
             
         }
         
@@ -596,36 +613,44 @@ public class Main extends EngineFrame {
                 int j = i;
 
                 while ( j >= h && array[j-h] > array[j] ) {
+                                       
+                    trocar( array, j-h, j );
+                    j = j - h;
                     
                     if ( lista.size() == 0 || !Arrays.equals( array, lista.get(lista.size() - 1)) ){
                         copiarArray( array, lista );
                     }
-                    
-                    trocar( array, j-h, j );
-                    j = j - h;
                 }
-            }
-
-            if ( lista.size() == 0 || !Arrays.equals( array, lista.get(lista.size() - 1)) ){
-               copiarArray( array, lista );
             }
             
             h = h / 3;
 
         }
         
-        copiarArray( array, lista );
+        if ( lista.size() == 0 || !Arrays.equals( array, lista.get(lista.size() - 1)) ){
+            copiarArray( array, lista );
+        }
 
     }
     
     private void mergeSort( int[] array, List<int[]> lista ) {
         
-        copiarArray( array, lista );
-        int length = array.length;
-        int[] tempMS = new int[length];
-        topDown( array, 0, length - 1, tempMS, lista );
-                
+        if( mergeR ){
+            
+            int length = array.length;
+            int[] tempMS = new int[length];
+            topDown( array, 0, length - 1, tempMS, lista );
+            
+        } else{
+            
+            int length = array.length;
+            int[] tempMS = new int[length];
+            bottomUp( array, 0, length - 1, tempMS, lista );
+            
+        }
+
     }
+                    
     
     private void topDown( int[] array, int start, int end, int[] tempMS, List<int[]> lista ) {
 
@@ -636,6 +661,15 @@ public class Main extends EngineFrame {
             topDown( array, start, middle, tempMS, lista ); // esquerda
             topDown( array, middle + 1, end, tempMS, lista ); // direita
             merge( array, start, middle, end, tempMS, lista ); // intercalação
+        }
+    }
+    
+    
+    private void bottomUp( int[] array, int start, int end, int[] tempMS, List<int[]> lista ) {
+        for ( int m = 1; m <= end; m *= 2 ) {
+            for ( int i = start; i <= end - m; i += 2*m ) {
+                merge( array, i, i+m-1, Math.min( i+2*m-1, end ), tempMS, lista );
+            }
         }
     }
     
@@ -796,20 +830,32 @@ public class Main extends EngineFrame {
     
     private void desenharJanela(){
         
-        janelaConfig = new GuiWindow( 295, 170, 200, 180, "Configurações" );
+        janelaConfig = new GuiWindow( 295, 150, 200, 220, "Configurações" );
         labelVelSimulacao = new GuiLabel( 20, 40, 40, 20, "Velocidade da Simulação" );
         velSimulacao = new GuiSlider( 20, 40, 130, 60, ( tempoParaMudar * 100 ), 1, 100, GuiSlider.HORIZONTAL );
         checkOrdenado = new GuiCheckBox( 20, 40, 20, 20, " Exibir Array Ordenado" );
-        checkSeed = new GuiCheckBox( 20, 40, 20, 20, " Habilitar Seed Fixa" );    
+        checkSeed = new GuiCheckBox( 20, 40, 20, 20, " Habilitar Seed Fixa" );
+        labelTipoMerge = new GuiLabel( 20, 40, 40, 20, "Tipo de MergeSort Usado");
+        radioIterativo = new GuiRadioButton(20, 40, 20, 20, "Iterativo");
+        radioRecursivo = new GuiRadioButton(20, 40, 20, 20, "Recursivo");
         
         checkOrdenado.setSelected( marcadoOrdenado );
         checkSeed.setSelected( marcadoSeed );
+        radioIterativo.setSelected( !mergeR );
+        radioRecursivo.setSelected( mergeR );
+        
+        buttonGroupMerge = new GuiButtonGroup();
+        radioIterativo.setButtonGroup( buttonGroupMerge );
+        radioRecursivo.setButtonGroup( buttonGroupMerge );
         
         glue = new GuiGlue( janelaConfig );
-        glue.addChild( labelVelSimulacao, 20, 40);
-        glue.addChild( velSimulacao, 35, 45 );
-        glue.addChild( checkOrdenado, 10, 110 );
-        glue.addChild( checkSeed, 10, 140 );
+        glue.addChild( labelVelSimulacao, 20, 35);
+        glue.addChild( velSimulacao, 35, 35 );
+        glue.addChild( checkOrdenado, 10, 155 );
+        glue.addChild( checkSeed, 10, 185 );
+        glue.addChild( labelTipoMerge, 20, 85 );
+        glue.addChild( radioIterativo, 5, 110 );
+        glue.addChild( radioRecursivo, 105, 110 );
             
     }
        
