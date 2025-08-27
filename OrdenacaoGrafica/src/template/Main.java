@@ -637,11 +637,19 @@ public class Main extends EngineFrame {
         
         if( mergeR ){
             
+            if ( lista.isEmpty() || !Arrays.equals( array, lista.get(lista.size() - 1)) ){
+                copiarArray( array, lista );
+            }
+            
             int length = array.length;
             int[] tempMS = new int[length];
             topDown( array, 0, length - 1, tempMS, lista );
             
         } else{
+            
+            if ( lista.isEmpty() || !Arrays.equals( array, lista.get(lista.size() - 1)) ){
+                copiarArray( array, lista );
+            }
             
             int length = array.length;
             int[] tempMS = new int[length];
